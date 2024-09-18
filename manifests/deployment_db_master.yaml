@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database-master-depl
+  namespace: school-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      database: master-SchoolDB
+  revisionHistoryLimit: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        database: master-SchoolDB
+    spec:
+      containers:
+        - name: database-master-pod
+          image: bitnami/postgresql:latest
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgresql-master-data
+              mountPath: /var/lib/postgresql/data
+          env:
+            - name: POSTGRESQL_REPLICATION_MODE
+              value: master
+            - name: POSTGRESQL_REPLICATION_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config-map
+                  key: db_replica_user
+            - name: POSTGRESQL_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config-map
+                  key: db_user
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config-map
+                  key: db_name
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_password
+            - name: POSTGRESQL_REPLICATION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_replica_password
+      volumes:
+        - name: postgresql-master-data
+          persistentVolumeClaim:
+            claimName: database-master-pvc

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: database-slave-sts
+  namespace: school-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      database: slave-SchoolDB
+  serviceName: "database-slave-service"
+  template:
+    metadata:
+      labels:
+        database: slave-SchoolDB
+    spec:
+      containers:
+        - name: database-slave-pod
+          image: bitnami/postgresql:latest
+          env:
+            - name: POSTGRESQL_REPLICATION_MODE
+              value: slave
+            - name: POSTGRESQL_MASTER_PORT_NUMBER
+              value: "5432"
+            - name: POSTGRESQL_REPLICATION_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config-map
+                  key: db_replica_user
+            - name: POSTGRESQL_MASTER_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config-map
+                  key: db_master_host
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_password
+            - name: POSTGRESQL_REPLICATION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_replica_password
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: database-volume-claim
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: database-volume-claim
+        namespace: school-app
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 1Gi

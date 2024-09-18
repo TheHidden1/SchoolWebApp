@@ -1,0 +1,11 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  namespace: school-app
+  name: db-config-map
+data:
+  db_user: postgres
+  db_name: SchoolDB
+  db_url: jdbc:postgresql://database-master-service.school-app.svc.cluster.local:5432/SchoolDB
+  db_replica_user: repl_user
+  db_master_host: database-master-service.school-app.svc.cluster.local

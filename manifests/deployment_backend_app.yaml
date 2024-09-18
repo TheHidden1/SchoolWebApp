@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: school-web-app-depl
+  namespace: school-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      title: School-Web-App
+      framework: spring_boot
+  revisionHistoryLimit: 3
+#  progressDeadlineSeconds: 300
+#  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        title: School-Web-App
+        framework: spring_boot
+    spec:
+      containers:
+        - name: school-web-app-pod
+          image: thehidden1/school_web_app:latest
+          imagePullPolicy: Always
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config-map
+                  key: db_url
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config-map
+                  key: db_user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_password
+          ports:
+            - containerPort: 8080
